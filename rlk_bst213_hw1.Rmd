@@ -1,0 +1,409 @@
+---
+title: "BST 213 Homework #1"
+author: "Rebecca Kelly"
+date: "due 2022-09-07"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(fig.width = 4, fig.asp = 0.618, echo = FALSE)
+library(tidyverse)
+library(ggplot2)
+library(knitr)
+library(tableone)
+library(confintr)
+```
+
+```{r data import, include=FALSE}
+#Import dataset
+df<-(read_csv("lbw.csv"))
+summary(df)
+View(df)
+df2 <- mutate(df, race_des = case_when(race == 1~"white", race == 2~"black", 
+                                       race == 3~"other"), 
+              smoke_des = case_when(smoke == 0~"No", smoke == 1~"Yes"), 
+              ht_des = case_when(ht == 0~"No", ht == 1~"Yes"), 
+              ui_des = case_when(ui == 0~"No",ui == 1~"Yes"))
+              options(repr.plot.width =2, repr.plot.height =2)
+```
+ 
+Goals:	Remind you of the simple univariate tests you have learned previously;
+        Set the groundwork for building multiple regression models;
+        Practice with correlation coefficients and scatter plots.
+
+Assignment:  Using the data set on birth weights, use the continuous measure 
+             of birth weight, BWT, as the outcome (not the dichotomized one) 
+             and:
+             
+
+*1. Find all the univariate predictors of birth weight.  Do not use regression. 
+Use “simple” tests, like t-tests, Wilcoxon tests, ANOVA, correlations, etc.*
+
+
+### Summary of Results
+
+
+## Relationship between mean infant birth weight and mother characteristics
+
+
+Predictor              | Significant  | Test Used         | p-value
+-----------------------|--------------|-------------------|----------
+Age                    | No           | Spearman's Corr.  | 0.4037
+Weight at last MC      | Yes          | Spearman's Corr.  | 0.0006
+Race                   | Yes          | ANOVA             | 0.0068
+Smoking Status         | Yes          | T-Test            | 0.0075
+Preterm Labor History  | Yes          | Kruskal Wallis    | 0.0093
+Hypertension History   | No           | T-Test            | 0.1329
+Uterine Irritability   | Yes          | T-Test            | 0.0005
+Physician Visits       | No           | ANOVA             | 0.4230
+
+Note:
+I am disregarding the variables "Identification Code" and "Low Birth 
+Weight(diochotomous outcome)" due to biological irrelevance and redundancy, respectively.
+
+
+## Outcome - Dependent Variable : Birth Weight (Continuous)
+
+Type: Continuous
+Determine Normality: Histogram
+      
+```{r bwt histogram, fig.align = "center", echo=FALSE}
+      df2 %>% ggplot() +
+      geom_histogram(aes(x = bwt), binwidth = 500 )+
+      labs(title = "Distribution of Birth Weight", x = "Birth Weight (grams)") +
+      theme_classic()
+```
+
+
+Conclusion: The distribution of Birth Weights is approximately normal and 
+does not require any transformation prior to subsequent analysis. 
+
+***
+
+## Covariate 1 : Mother's Age
+
+Type: Continuous
+Determine Normality: Histogram
+      
+```{r age histogram, fig.align = "center", echo=FALSE}
+      df2 %>% ggplot() +
+      geom_histogram(aes(x = age), binwidth = 5 ) +
+      labs(title = "Distribution of Mothers Age", x = "Age (years)") +
+      theme_classic()
+```
+
+
+Conclusion: The mother's age distribution is skewed to the right. We could 
+either transform the data or use non-parametric methods to analyze the data.
+I will use a non-parametric approach to keep things simple.
+    
+Inspect scatter plot: 
+```{r scatter plot of age vs bwt, fig.align = "center", echo=FALSE}
+
+df2 %>% ggplot() +
+  geom_point(aes(x = age, y = bwt)) +
+  labs(title = "Mother's Age v.s. Infant Birthweight",
+       x = "Mother's Age (years)", y = "Birthweight (grams)") +
+  theme_bw()
+```
+
+  
+Test of mother's age relationship with birth weight:
+H0 = There is no correlation between mother's age and infant birth weight. 
+(r = 0) 
+HA = There is a correlation between mother's age and infant birth weight. 
+(r does not equal 0)
+```{r compute spearman coefficient age bwt, fig.align = "center", echo=FALSE}
+
+cor.test(df2$age, df2$bwt, method= "spearman")
+```
+Conclusion for covariate 1: I fail to reject the null hypothesis that mother's 
+age and infant birth weight are not correlated. Based on a p-value of 0.4037, 
+there is no linear relationship between mother's age and infant birth weight. 
+  
+***
+
+## Covariate 2 : Weight of mother at last menstrual cycle
+
+Type: Continuous
+Determine Normality: Histogram
+```{r histogram lwt, fig.align = "center", echo=FALSE}
+      df2 %>% ggplot() +
+      geom_histogram(aes(x = lwt), binwidth = 20 ) +
+      labs(title = "Distribution of Mother's Weight at Last Menstrual Cycle", x = "Weight (lbs)")       +
+      theme_classic()
+```
+
+
+Approaches:The mother's weight at last menstrual cycle age distribution is 
+skewed to the right. We could either transform the data or use non-parametric 
+methods to analyze the data. I will use a non-parametric approach to keep 
+things simple. 
+    
+Inspect Scatter Plot: 
+```{r scatter plot of lwt vs bwt, fig.align = "center", echo=FALSE}
+
+      df2 %>% ggplot() +
+      geom_point(aes(x =lwt, y =bwt)) +
+      labs(title = "Mother's Weight at last Menstrual Cycle v.s. Infant Birthweight",
+      x = "Weight (lbs)", y = "Birthweight (grams)") +
+      theme_bw()
+```
+Test of mother's weight at last menstrual cycle with birth weight:
+ 
+H0: There is no correlation between mother's weight at last menstrual cycle 
+and infant birth weight. (r = 0) 
+  
+HA: There is a correlation between mother's weight at last menstrual cycle 
+and infant birth weight. (r does not equal 0)
+```{r compute spearman coefficient lwt bwt, fig.align = "center", echo=FALSE}
+
+cor.test(df2$lwt, df2$bwt, method= "spearman")
+
+ci_cor(df2$lwt, df2$bwt,
+  probs = c(0.025, 0.975),
+  method = c("spearman"),
+  type = c("bootstrap"),
+  boot_type = c("bca"),
+  R = 999,
+  seed = 1)
+```
+
+
+Conclusion for Covariate 2: I reject the null hypothesis that mother's weight 
+at last menstrual period and infant birth weight are not correlated. Based on 
+a p-value of 0.00056, there is a linear relationship between mother's weight 
+at last menstrual period and infant birth weight. 
+
+***
+
+## Covariate 3 : Race
+
+Type: Categorical; 1 = white, 2 = black, 3 = other
+Determine Normality: Boxplots
+```{r boxplot bwt race, fig.align = "center", echo=FALSE}
+      df2 %>% ggplot() +
+      geom_boxplot(aes(x = factor(race_des), y = bwt,
+      fill = factor(race_des))) +
+      labs(title = "Birthweight by Race", x = "Race", y = "Birthweight (grams)") +
+      theme_minimal()
+```
+
+
+Approach: 
+H0: The mean birth weight of infants is the same among different racial groups.
+HA: The mean birth weight of infants in at least one of the race categories is 
+different from the others. 
+
+Test of significance: Analysis of Variance 
+```{r Analysis of Variance bwt race, fig.align = "center", echo=FALSE}
+anova <- aov(bwt ~ race, df2)
+summary(anova)
+```
+Based on an F-statistic of 7.50 corresponding to a p-value of 0.00678, I reject
+the null hypothesis that there is no difference in mean birth weight among 
+infants in different racial groups. 
+
+To identify which groups may be different from one another, I can perform 
+pair-wise t-tests. 
+```{r pairwise t-test bwt race, fig.align = "center", echo=FALSE}
+pairwise.t.test(df2$bwt, df2$race_des, p.adjust.method="bonferroni")
+```
+Conclusions: Based on pair-wise t-tests of the three racial categories 
+compared, there are differences in mean birth weight between infants born 
+to white and black mothers, and white and other mothers. 
+
+***
+
+## Covariate 4 : Smoking Status during Pregnancy
+
+Type: Dichotomous
+Determine Normality: Boxplots
+
+```{r boxplot smoke stat, fig.align = "center", echo=FALSE}
+      df2 %>% ggplot() +
+      geom_boxplot(aes(x = factor(smoke_des), y = bwt,
+      fill = factor(smoke_des))) +
+      labs(title = "Birthweight by Smoking Status", x = "Smoking", y = "Birthweight (grams)") +
+      theme_minimal()
+```
+
+
+Approach: The distributions are relatively normal, so I will use parametric 
+methods. I will perform an independent t-test between the two groups to 
+determine whether or not the means of the groups are the same. 
+
+H0: There is no difference in mean birth weight of infants born to mothers who 
+smoked compared to mothers who did not smoke. (meu1 - meu2 = 0)
+HA: There is a difference in mean birth weight of infants born to mothers who 
+smoked compared to mothers who did not smoke. (meu1 - meu2 != 0)
+
+
+Test of significance:Unpaired t-test
+```{r independent 2-sample t-test bwt smoke, fig.align = "center", echo=FALSE}
+
+t.test(df2$bwt~df2$smoke_des)# where y is numeric and x is a binary factor
+
+```
+Conclusion: Based on the t-statistic of 2.71, corresponding to a p-value 
+of 0.0075, I reject the null hypothesis that there is no difference between 
+the mean birth weight of infants born to mothers who are non-smokers and to 
+mothers who are smokers. 
+      
+***
+
+## Covariate 5 : History of Preterm Labor
+
+Type: Dichotomous
+Determine Normality: Boxplots
+```{r boxplot ptl bwt, fig.align = "center", echo=FALSE}
+      df2 %>% ggplot() +
+      geom_boxplot(aes(x = factor(ptl), y = bwt,
+      fill = factor(ptl))) +
+      labs(title = "Birthweight by History of Premature Labor", x = "Number of Premature Labors", y = "Birthweight (grams)") +
+      theme_minimal()
+```
+
+
+Approach: Three of the distributions appear skewed. I will need to use 
+non-parametric methods to determine if one of the groups is different 
+from the others. 
+
+Test of significance: Kruskal Wallis 
+
+H0: The median of the distributions are all at the same location.
+HA: The median of at least one distribution is at a different location. 
+```{r kruskal wasllis test bwt ptl, fig.align = "center", echo=FALSE}
+kruskal.test(bwt ~ ptl, data = df2)
+
+pairwise.wilcox.test(df2$bwt, df2$ptl,
+                 p.adjust.method = "BH")
+
+```
+
+Conclusion: Based on the p-value from the Kruskal Wallis test (0.0093), I 
+reject the null hypothesis that the median birth weight was the same among 
+women with different numbers of previous preterm labors. The multiple 
+comparisons Wilcoxon rank sum test suggests that it is birth weight of 
+infants to mothers with one prior pre-term birth is different from the others. 
+
+***
+
+## Covariate 6 : History of Hypertension
+
+Type: Dichotomous
+Determine Normality: 
+```{r boxplot ht bwt, fig.align = "center", echo=FALSE}
+      df2 %>% ggplot() +
+      geom_boxplot(aes(x = factor(ht_des), y = bwt,
+      fill = factor(ht_des))) +
+      labs(title = "Birthweight by History of Hypertension", x = "History of Hypertension", y = "Birthweight (grams)") +
+      theme_minimal()
+```
+
+
+Approach: The distributions appear normal. I can use parametric methods 
+for a test of significance. 
+
+Test of significance: independent, 2-sample t-test
+
+H0: There is no difference in mean birth weights of infants born to mothers 
+who had hypertension compared to mothers who did not have hypertension. 
+(meu1 - meu2 = 0)
+HA: There is a difference in mean birth weights of infants born to mothers 
+who had hypertension compared to mothers who did not have hypertension. 
+(meu1 - meu2 != 0)
+
+```{r independent 2-sample t-test ht bwt, fig.align = "center", echo=FALSE}
+
+t.test(df2$bwt~df2$ht_des)# where y is numeric and x is a binary factor
+
+```
+Conclusion: Based on the p-value of 0.133, I fail to reject the null 
+hypothesis that there is no difference in mean birth weights of infants born 
+to mothers who had hypertension compared to mothers who did not have 
+hypertension. There is not a statistically significant difference in mean 
+birth weight between mothers with hypertension and those without hypertension. 
+
+***
+
+## Covariate 7 : Presence of Uterine Irritability 
+
+Type: Dichotomous
+Determine Normality: 
+```{r boxplot ui bwt, fig.align = "center", echo=FALSE}
+      df2 %>% ggplot() +
+      geom_boxplot(aes(x = factor(ui_des), y = bwt,
+      fill = factor(ui_des))) +
+      labs(title = "Birthweight by Uterine Irritability", x = "History of Uterine Irritability", y = "Birthweight (grams)") +
+      theme_minimal()
+```
+
+
+Approach: The distributions appear normal. I can use parametric methods for 
+a test of significance. 
+
+Test of significance: independent 2-sample t-test
+
+H0: There is no difference in mean birth weight of infants born to mothers 
+who had uterine irritability compared to mothers who did not have uterine 
+irritability. (meu1 - meu2 = 0)
+HA: There is a difference in mean birth weight of infants born to mothers 
+who had uterine irritability compared to mothers who did not have uterine 
+irritability. (meu1 - meu2 != 0)
+
+Test of significance:
+```{r independent 2-sample t-test bwt ui, fig.align = "center", echo=FALSE}
+
+t.test(df2$bwt~df2$ui_des)# where y is numeric and x is a binary factor
+
+```
+Conclusion: Based on the p-value of 0.00047, I reject the null hypothesis 
+that there is no difference between mean birth weight of infants born to 
+mothers with uterine irritability compared to mothers without uterine 
+irritability. There is statistical support for the hypothesis that 
+mother's uterine irritability is related to infant birth weight. 
+
+***
+
+## Covariate 8 : Number of Physician Visits during the First Trimester 
+
+Type: Count
+Determine Normality: 
+```{r boxplot bwt ftv, fig.align = "center", echo=FALSE}
+      df2 %>% ggplot() +
+      geom_boxplot(aes(x = factor(ftv), y = bwt,
+      fill = factor(ftv))) +
+      labs(title = "Number of Physician Visits in 1st Trimester versus Infant Birth Weight", x = "Number of Physician Visits", y = "Birthweight (grams)") +
+      theme_minimal()
+```
+
+
+Approach: The distribution of birthweight among the number of physician visit     categories, so I will proceed with parametric tests. 
+
+Test of significance: Analysis of Variance (ANOVA) 
+```{r Analysis of Variance bwt ftv, fig.align = "center", echo=FALSE}
+anova <- aov(bwt ~ ftv, df2)
+summary(anova)
+```
+Conclusions: Based on an F-statistic of 0.644 corresponding to a p-value 
+of 0.423, I fail to reject the null hypothesis that there is no difference 
+in mean birth weight among infants whose mothers had a different number of 
+physician visits during the first trimester. 
+
+***
+
+
+
+
+*2. Use scatter plots and correlation coefficients to look at the 
+relationship between mother's age versus birth weight and, separately, 
+mother’s weight versus birth weight. (Note: You may have done these 
+already for #1 above.)*
+
+
+
+See results from #1.
+
+
+
