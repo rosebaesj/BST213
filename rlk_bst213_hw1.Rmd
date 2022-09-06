@@ -1,10 +1,3 @@
----
-title: "BST 213 Homework #1"
-author: "Rebecca Kelly"
-date: "due 2022-09-07"
-output: pdf_document
----
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(fig.width = 4, fig.asp = 0.618, echo = FALSE)
 library(tidyverse)
