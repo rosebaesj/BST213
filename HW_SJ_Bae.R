@@ -9,6 +9,7 @@ library("ggplot2")
 library("ggstatsplot")
 library("dplyr")
 library("rstatix")
+library("moments")
 lbw <- read_excel("lbw.xls")
 
 # Assignment:  Using the data set on birth weights, use the continuous measure of birth weight, BWT, as the outcome (not the dichotomized one) and:
@@ -44,6 +45,11 @@ ggscatterstats(data=lbw,x=age, y=bwt, bf.message = F,
                smooth.line.args = list (size = 0, alpha = 0, method = "lm", formular = 0))
 
 
+skewness(lbw$age)
+kurtosis(lbw$age)
+mean(lbw$age)
+median(lbw$age)
+shapiro.test(lbw$age)
 
 
 lbw_1 <- lbw[-189,]
