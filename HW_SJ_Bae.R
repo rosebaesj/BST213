@@ -72,7 +72,7 @@ ggplot(lbw, aes(x=lwt))+
   scale_y_continuous(expand = c(0,0.1))
 
 cor.test(lbw$lwt, lbw$bwt, method= "spearman")
-
+cor.test(lbw$lwt, lbw$bwt, method= "pearson")
 
 ggscatterstats(data=lbw,x=lwt, y=bwt, bf.message = F,
                smooth.line.args = list (size = 0, alpha = 0, method = "lm", formular = 0))
@@ -116,6 +116,9 @@ lbw_2 <- lbw %>%
 
 lbw_aov <- aov(data = lbw, bwt~race)
 summary(lbw_aov)
+pairwise.t.test(lbw$bwt, lbw$race, p.adjust.method = "none")
+
+
 kruskal.test(data = lbw, bwt~race)
 
 
@@ -206,6 +209,8 @@ wilcox.test(lbw[lbw$ptl2=='0',]$bwt, lbw[lbw$ptl2=='1',]$bwt)
 boxplot(data=lbw, bwt~ht)
 t.test(data=lbw, bwt~ht)
 
+t.test(data=lbw, bwt~ht, var.equal = T)
+
 boxplot(data=lbw, bwt~ui)
 t.test(data=lbw, bwt~ui)
 
@@ -250,6 +255,65 @@ ggplot(lbw,aes(x = age, y = bwt)) +
 
 cor.test(lbw$age, lbw$bwt, method= "spearman")
 cor.test(lbw$age, lbw$bwt, method= "pearson")
+
+
+
+
+
+
+##### REFERENCE CODES ######
+
+#+ Q: Is my outcome normally distributed?
+
+#### CORRELATION #####
+#### Continuous variable ####
+#+ Q: 
+
+#### Categorical variable #####
+
+#+ Q: Is it ordinal?
+#+      >>Then maybe you should consider Spearman
+
+#+ Q: Is my power ok? 
+#+      >> count the number of samples
+#+      but you can't see the means or medians!! That's cheating.
+#+      Just decide based on your subjective knowledge and stick with it.
+
+#+ Q: Is my data have normal distribution of outcome in each groups? 
+#+      >> Yes-anova, No-Kruskal wallis
+#+      however, we tend to just use ANOVA if the distribution of total was normal
+#+      then maybe change it after revision LOL
+
+#### REGRESSION #####
+
+library(sasLM) ## this package runs exactly the same with SAS
+
+### Continuous predictor: maternal weight ####
+REG(bwt ~ lwt, Data = lbw) ## this code runs same with SAS
+summary(lm (bwt ~ lwt, data = lbw)) ## what we usually use in R
+
+GLM(bwt ~ lwt, Data = lbw, BETA=TRUE, EMEAN = TRUE) # BETA=T for getting parameter
+####***I don't understand GLM quite much, need help here***###
+
+### Binary predictor: hypertension #####
+lbw$ht <- as.factor(lbw$ht)
+summary(lbw$ht)
+REG(bwt ~ ht, Data = lbw)
+summary (lm(bwt ~ht, data = lbw))
+GLM(bwt ~ ht, Data = lbw, BETA=TRUE, EMEAN = TRUE)
+
+### Categorical predictor: hypertension #####
+
+lbw$race <- as.factor(lbw$race)
+summary(lbw$race)
+REG(bwt ~ race, Data = lbw)
+summary (lm(bwt ~race, data = lbw))
+GLM(bwt ~ race, Data = lbw, BETA=TRUE, EMEAN = TRUE)
+
+
+
+
+
 
 
 
