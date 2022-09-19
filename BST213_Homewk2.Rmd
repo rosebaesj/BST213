@@ -1,0 +1,129 @@
+---
+title: ''
+output:
+  word_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Importing libraries 
+library(ggplot2)
+library(readr)
+library(dplyr) # To manipulate data - for select/mutate/summarise/arrange/filter functions 
+library(truncnorm)
+library(broom) # To convert into tidy tibbles 
+library(e1071) #For skewness/kurtosi & normality test 
+library(readxl) #To read excel files 
+
+```
+
+## BST213 
+###Homework 2
+
+Goals:  To be able to interpret simple linear regression and ANOVA models with a continuous predictor, a binary predictor, or a categorical predictor.
+
+### QUESTION 1 
+1.	Use PROC REG to run a model that includes maternal weight as a continuous predictor of birth weight.  Interpret the regression portion (i.e., the bottom) of the printout.   Compare the regression results to a Pearson correlation coefficient. 
+	
+
+
+```{r message=FALSE, warning=FALSE}
+#SET DATAPATH 
+setwd("/Users/jolen/OneDrive/Harvard MPH/Curriculum&Materials/BST 213 Regression Clinical/Datasets")
+lbw<-read_excel("lbw.xls")
+
+# Model lwt as a predictor of bwt (outcome)
+model1 <-lm(bwt~lwt,data=lbw)
+broom::tidy(model1)
+
+# The b1 coefficient is 4.445 (SE228.4,p=0.0102). Hence infant birth weight increases by 4.445 units  with every 1 unit increase in maternal weight. 
+
+#Compare regression to a pearson 
+
+plot(y=lbw$bwt,x=lbw$lwt,ylab="infant birth weight",xlab="maternal weight")
+cor.test(lbw$bwt,lbw$lwt)
+
+# Correlation coefficient 0.1864, p=0.0102 (95%CI 0.0448,0.3206). There is a significant positive correlation between bwt & lwt. 
+
+
+```
+
+Use PROC GLM to run the same model.  Interpret and compare the results to the regression results from above.
+
+```{r message=FALSE, warning=FALSE}
+
+# ANOVA using bwt & lwt 
+summary(aov(lbw$bwt~(lbw$lwt)))
+anova(lm(bwt~lwt,data=lbw))
+
+# p=0.0102
+
+`````
+### QUESTION 2 
+
+2.	Use PROC REG to run a model that includes history of hypertension as a binary predictor of birth weight. Interpret the regression portion of the printout. Compare the regression results to a 2-sample t-test.
+Continuous var – 
+Binary – HTN 
+Categorical var – race 
+
+```{r message=FALSE, warning=FALSE}
+
+#model bwt (outcome) with ht (binary predictor)
+model2 <-lm(bwt~factor(ht),data=lbw)
+broom::tidy(model2)
+confint(model2)
+
+# There is a 435.67 units decrease (95%CI -861.23,-10.117,p=0.0448) in bwt when ht=1 
+
+# bwt & maternal hypertension: T-test 
+table(lbw$ht)
+t.test(lbw$bwt~lbw$ht)
+
+# mean bwt (Ht=0): 2972.424, mean bwt (ht=1): 2536.750; Difference in bwt in ht 0 vs. 1 is 435.674. p=0.1329. This corresponds with the results from the regression analysis. 
+```
+Use PROC GLM to run the same model.  Interpret and compare the results to the regression results from above.
+
+```{r message=FALSE, warning=FALSE}
+#ANOVA: bwt as outcome, ht as binary predictor 
+
+by(lbw$bwt,lbw$ht,summary)
+boxplot(lbw$bwt~lbw$ht,xlab="maternal hypertension",ylab="infant birth weight")
+anova(lm(bwt~factor(ht),data=lbw))
+
+#p=0.04485, mean bwt(ht=0) 2972, mean bwt(ht=1)2537 - difference is 435. Difference in mean bwt is the same for regression, t-test & anova. The p-values of ANOVA & linear regression corresponds. 
+
+````
+
+
+### Question 3
+
+3.	Use PROC REG to run a model that includes race (in 3 categories) as a categorical predictor of birth weight.  Interpret the regression portion of the printout. Compare the regression results to a standard ANOVA analysis.  
+	
+
+```{r message=FALSE, warning=FALSE}
+#model bwt (outcome) with race (catgeorical predictor)
+model3 <-lm(bwt~factor(race),data=lbw)
+broom::tidy(model3)
+confint(model3)
+
+# mean bwt of white infants = 3103.947 (B0), black infants have a bwt that is 384.2556 lower (95%CI -695.71,-72.794,p=0.0158)  than white infants(ref category), while "other race" infants have a bwt that is 299.933 lower(95%CI -524.2,-75.665,p=0.0093) than white infants. This differences are significant. 
+
+
+# ANOVA of bwt with race
+
+by(lbw$bwt,lbw$race,summary)
+boxplot(lbw$bwt~lbw$race,xlab="race",ylab="infant birth weight")
+anova(lm(bwt~factor(race),data=lbw))
+
+# mean bwt (white)= 3104, (black)=2720, (other)=2804. Mean differences are similar to in the regression model. p<0.007834 - there is a significant difference in bwt comparing infants from mother of different races. 
+
+````
+
+Use PROC GLM to run the same model.  Interpret and compare the results to the regression above. 
+	
+```{r message=FALSE, warning=FALSE}
+#? PROC GLM is similar to ANOVA 
+
+````
