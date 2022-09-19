@@ -1,0 +1,327 @@
+---
+title: "BST213 Homework #2"
+author: "Rebecca Kelly"
+date: "2022-09-07"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(fig.width = 4, fig.asp = 0.618, echo = FALSE)
+library(tidyverse)
+library(ggplot2)
+library(knitr)
+library(tableone)
+library(confintr)
+library(haven)
+```
+
+```{r data import, include=FALSE}
+
+#Import dataset
+df<-(read_csv("lbw.csv"))
+summary(df)
+View(df)
+df2 <- mutate(df, race_des = case_when(race == 1~"white", race == 2~"black", 
+                                       race == 3~"other"), 
+              smoke_des = case_when(smoke == 0~"No", smoke == 1~"Yes"), 
+              ht_des = case_when(ht == 0~"No", ht == 1~"Yes"), 
+              ui_des = case_when(ui == 0~"No",ui == 1~"Yes"))
+              options(repr.plot.width =2, repr.plot.height =2)
+```
+
+Goals:    To be able to interpret simple linear regression models with 
+          continuous, binary predictor, or categorical predictors.
+
+
+Assignment: 
+
+
+Simple Linear Regression Results
+
+Predictor  
+------------------------------------------------------------
+continuous    - *Weight at last MC*     (#1)         
+binary        - *Hypertension History*  (#2)          
+categorical   - *Race*                  (#3)              
+
+
+Assumptions for Simple Linear Regression: 
+
+Linear Relationship between the predictor and the outcome
+All data points are independent
+Normal distribution of the residuals
+Equal variance of the residuals 
+
+
+
+#1. Run a model that includes maternal weight as a continuous predictor 
+of birth weight. Interpret the regression portion (i.e., the bottom) of 
+the printout. Compare the regression results to a Pearson correlation 
+coefficient. Use PROC GLM to run the same model. Interpret and compare 
+the results to the regression results from above.
+
+
+ 
+```{r, lab9 code bwt v lwt simple linear regression, include = TRUE}
+
+df2 %>%
+  ggplot(aes(x=lwt,y=bwt)) +
+  geom_point(alpha=0.7) +
+  labs(x="Weight of Mother (lbs)", y="Birthweight (grams)")
+
+mod2 <- lm(lwt ~ bwt, df2)
+summary(mod2)
+pred2 <- predict(mod2, interval="prediction")
+newdf2 <- cbind(df2, pred2)
+```
+
+```{r, bwt v lwt linear reg, include = TRUE}
+df2 %>%
+  ggplot(aes(x=lwt,y=bwt)) +
+  geom_point(alpha=0.95) +
+  labs(x="Weight of Mother (lbs)", y="Birthweight (grams)")+
+  geom_smooth(method = "lm", se = TRUE)
+```
+
+```{r, plot, include = FALSE}
+plot(mod2, 1)
+```
+
+```{r histogram, include = TRUE}
+
+ggplot(data = df2, aes(x = mod2$residuals)) +
+geom_histogram(bins = 25) +
+labs(title = 'Histogram of Residuals', x = 'Residuals', y = 'Frequency')
+
+```
+
+
+```{r calculate the CI for beta, include=FALSE}
+#Calculate confidence interval
+predict(mod2, interval="confidence")
+
+```
+
+Results from simple linear regression: 
+
+y = a + bx
+y = 106.8 + 0.007820x
+p-value = 0.01021
+R2 = 0.02959
+ 
+Interpretation: 
+The average weight of the infant changes by 0.0078290 grams for each one 
+pound change in weight of the mother. The infant weighs 106.8 grams if the
+mother weighs 0 pounds. The variable weight of the mother accounts for 
+0.02959 of the total variability in infant weight. 
+
+
+
+Weight of mother at last menstrual cycle
+
+Type: Continuous
+Determine Normality: Histogram
+
+
+
+Test of mother's weight at last menstrual cycle with birth weight:
+ 
+H0: There is no correlation between mother's weight at last menstrual cycle 
+and infant birth weight. (r = 0) 
+  
+HA: There is a correlation between mother's weight at last menstrual cycle 
+and infant birth weight. (r does not equal 0)
+
+```{r compute pearson coefficient lwt bwt, fig.align = "center", include = TRUE}
+
+cor.test(df2$lwt, df2$bwt, method= "pearson")
+
+ci_cor(df2$lwt, df2$bwt,
+  probs = c(0.025, 0.975),
+  method = c("pearson"))
+
+```
+
+Results from simple linear regression: 
+
+y = a + bx
+y = 106.8 + 0.007820x
+p-value = 0.01021
+
+Results from pearson correlation: 
+
+0.1864291 (0.044893, 0.320627)
+p-value = 0.01021
+
+
+Compare results: 
+Both methods show a positive, linear relationship between infant birth
+weight and mother's weight. 
+The p-value from each approach is the same: 0.01021. 
+
+
+***
+
+#2.Run a model that includes history of hypertension as a binary predictor 
+of birth weight. Interpret the regression portion of the printout. Compare 
+the regression results to a 2-sample t-test. Use PROC GLM to run the same 
+model. Interpret and compare the results to the regression results from 
+above.
+
+
+```{r, lab9 code ht v bwt simple linear regression, include=TRUE}
+
+df2 %>%
+  ggplot(aes(x=ht ,y=bwt)) +
+  geom_boxplot(aes(x = factor(ht), y = bwt,
+      fill = factor(ht))) +
+  labs(x= "Birthweight (grams)", y="History of Hypertension")
+
+mod3 <- lm(bwt ~ ht, df2)
+summary(mod3)
+
+
+pred3 <- predict(mod3, interval="prediction")
+newdf3 <- cbind(df2, pred3)
+```
+
+```{r, ht v bwt linear reg, echo=FALSE}
+newdf3 %>%
+  ggplot(aes(ht, bwt))+
+  labs(x="History of Hypertension",y= "Birthweight (grams)") +
+  geom_point()+
+  geom_smooth(method = "lm", se = TRUE)
+  
+```
+
+```{r, include=TRUE}
+ggplot(data = df2, aes(x = mod3$residuals)) +
+  geom_histogram(bins = 25) +
+  labs(title = 'Histogram of Residuals', x = 'Residuals', y = 'Frequency')
+```
+
+Linear Regression Results: 
+
+y = a + bx
+y = 2972 + -436 x
+p-value = 0.0448
+R2 value = 0.01611
+ 
+Interpretation: For mothers without hypertension, the mean birth weight of
+infants is 2972 grams.For mothers with hypertension, the mean birth weight of
+infants decreases by 436 grams. Mother's hypertension explains 0.016 of 
+the variation in infant birth weight.  
+
+
+T-Test:
+```{r independent 2-sample t-test ht bwt, fig.align = "center", include=TRUE}
+
+t.test(bwt ~ ht, data = df2, alternative = c("two.sided"), mu = 0, 
+       paired = FALSE, var.equal = TRUE)
+```
+```{r difference in means, include=FALSE}
+2972.424 - 2536.750
+
+```
+2972.424 - 2536.750 = 435.674
+
+435.674 (10.117, 861.23)
+
+Conclusion from univariate test: Based on the p-value of 0.04485, I 
+reject the null hypothesis that there is no difference in mean birth weights 
+of infants born to mothers who had hypertension compared to mothers who did 
+not have hypertension. There is  a statistically significant difference 
+in mean birth weight between mothers with hypertension and those without 
+hypertension. 
+
+
+Comparison of methods: 
+
+The p-value and the differences are the same for both approaches. 
+
+
+
+***
+
+3. Use PROC REG to run a model that includes race (in 3 categories) as 
+a categorical predictor of birth weight. Interpret the regression portion 
+of the printout. Compare the regression results to a standard ANOVA analysis.  
+Use PROC GLM to run the same model.  Interpret and compare the results to 
+the regression results from above.
+
+H0: There is no relationship between race and birthweight (x1 = 0, x2 = 0)
+HA: At least one of the race categories is different (X1 or X2 !=0)
+
+```{r, lab9 code bwt v race, simple linear regression, include = TRUE}
+
+
+mod4 <- lm(bwt ~ race_des, df2)
+summary(mod4)
+
+df2 %>%
+  ggplot(aes(x=race_des,y=bwt)) +
+  geom_point(alpha=0.95) +
+  labs(x="Race", y="Birthweight (grams)") +
+  geom_smooth(method = "lm", se = TRUE)
+```
+
+```{r residuals, include = FALSE}
+pred4 <- predict(mod4, interval="prediction")
+newdf4 <- cbind(df2, pred4)
+
+plot(mod4,1)
+```
+
+```{r}
+ggplot(data = df2, aes(x = mod4$residuals)) +
+  geom_histogram(bins = 25) +
+  labs(title = 'Histogram of Residuals', x = 'Residuals', y = 'Frequency')
+```
+
+
+
+
+
+This model uses race = black as the reference group due to the 
+alphabetical arrangement of my race_des column by categories. 
+
+Results from simple linear regression: 
+
+y = a + bx
+y = 2719.69 + x1(84.32) + x2(384.26) 
+p-value = 0.6099, 0.0159
+R2 = 0.0406
+
+Interpretation: Infants born to black mothers have an average birth weight
+of 2719.69 grams. Infants born to mothers of other races have an average
+birth weight of 2804.01 grams. Infants born to white mothers have an average
+birth weight of 3103.95 grams. Based on the p-value of 0.0159 for the
+x2 coefficient, infants born to white mothers have a higher mean birth
+weight from black or other mothers. 
+other mothers. 
+
+
+Approach: 
+H0: The mean birth weight of infants is the same among different racial groups.
+
+HA: The mean birth weight of infants in at least one of the race categories is 
+different from the others. 
+
+Test of significance: Analysis of Variance 
+```{r Analysis of Variance bwt race, fig.align = "center", include=TRUE}
+anova <- aov(bwt ~ race_des, df2)
+summary(anova)
+
+#Multiple testing
+
+pairwise.t.test(df2$bwt, df2$race_des, p.adjust.method="bonferroni")
+
+```
+
+Comparison of methods: 
+
+Both methods conclude that there is a positive relationship between
+average birthweight and infants born to white mothers versus black and other
+mothers. 
+ 
