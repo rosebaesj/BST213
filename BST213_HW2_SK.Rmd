@@ -1,0 +1,89 @@
+---
+title: "BST213_HW2_SK"
+author: "Soomin Kim"
+date: "2022-09-19"
+output: html_document
+---
+
+```{r}
+library(haven)
+library(ggplot2)
+```
+
+
+```{r}
+library(readxl)
+lbw <- read_excel("~/Google Drive/MPH Harvard Chan/Fall/BST 213/lbw.xls")
+View(lbw) 
+```
+
+
+###1.	Use PROC REG to run a model that includes maternal weight as a continuous predictor of birth weight.  Interpret the regression portion (i.e., the bottom) of the printout.   Compare the regression results to a Pearson correlation coefficient. Use PROC GLM to run the same model.  Interpret and compare the results to the regression results from above.
+
+```{r}
+lm1 <- lm(bwt~lwt, lbw)
+summary(lm1)
+confint(lm1)
+```
+# bwt-hat = 2367.767 + 4.445*lwt-hat
+# Mothers who weigh 1 pound more in last menstrual cycle have babies weighing 4.445g more compared to babies of mothers who weigh 1 pound less in last menstrual cycle.
+
+```{r}
+ggplot(data=lbw, aes(lwt,bwt))+
+  geom_point()+
+  geom_smooth(method='lm')
+```
+
+
+```{r}
+cor.test(lbw$lwt,lbw$bwt)
+```
+# pearson r squared = multiple R^2 in lin regression
+# p-value for pearson and beta coefficient are the same
+
+###2.	Use PROC REG to run a model that includes history of hypertension as a binary predictor of birth weight. Interpret the regression portion of the printout. Compare the regression results to a 2-sample t-test. Use PROC GLM to run the same model.  Interpret and compare the results to the regression results from above.
+
+```{r}
+lbw$ht <- factor(lbw$ht)
+lm2 <- lm(bwt~ht, lbw)
+summary(lm2)
+confint(lm2)
+```
+# bwt-hat = 2972.42 - 435.67*ht-hat
+# Mothers with hypertension have babies weighing 435.67g less compared to babies of mothers without hypertension.
+
+```{r}
+ggplot(data=lbw, aes(as.integer(ht),bwt))+
+  geom_point()+
+  geom_smooth(method='lm')
+```
+
+
+```{r}
+t.test(lbw$bwt~lbw$ht, var.equal=TRUE)
+```
+# p-value for t-test is the same as from lin regression
+
+###3.	Use PROC REG to run a model that includes race (in 3 categories) as a categorical predictor of birth weight.  Interpret the regression portion of the printout. Compare the regression results to a standard ANOVA analysis.  Use PROC GLM to run the same model.  Interpret and compare the results to the regression results from above.
+
+```{r}
+lbw$race <- factor(lbw$race)
+lm3 <- lm(bwt~race, lbw)
+summary(lm3)
+confint(lm3)
+```
+# bwt-hat = 3103.95 - 384.26*Black-hat - 299.93*Other-hat
+# Black mothers have babies weighing 384.26g less than babies of White mothers
+# Mothers of other races have babies weighing 299.93g less than babies of White mothers
+
+```{r}
+ggplot(data=lbw, aes(race,bwt))+
+  geom_boxplot()
+```
+
+
+```{r}
+aov1 <- aov(bwt~race,lbw)
+summary(aov1)
+```
+# ANOVA p-value same as F stat p-value from lin regression
