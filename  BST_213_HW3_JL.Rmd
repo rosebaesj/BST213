@@ -1,0 +1,67 @@
+---
+title: "BST 213 HW 3"
+author: "Julie Lee"
+date: "2022-09-22"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r, libraries}
+# Importing libraries 
+library(ggplot2)
+library(readr)
+library(tidyverse) 
+library(readxl) #To read excel files
+library(sasLM) # for running like SAS
+library(mvtnorm)
+library(rstatix) # for tidy table result
+```
+
+
+
+```{r tidy table}
+rm(list = ls())
+lbw <- read_excel("lbw.xls")
+view(lbw)
+summary(lbw)
+#tidy data
+#race 1 = White, race 2 = Black, race 3 = Other
+#history of hypertension 0 = no, 1 = yes
+lbw <- lbw |> mutate(ht_des = case_when(ht == 0~0,
+                                        ht == 1~1),
+                     race_des = case_when(race == 1~0, race == 2~1, race ==3~2))
+lbw$ht_des <- as.factor(lbw$ht_des)
+lbw$race_des <- as.factor(lbw$race_des)
+#make White as reference (race_des) -> biggest sample size
+```
+
+## Question 1
+Use PROC REG and dummy-coding (see assignment #2) to run a regression with LWT, HT and Race simultaneously as predictors.  Interpret the results and compare to your earlier 1-predictor models.
+
+```{r}
+REG(bwt~lwt+ht_des+race_des, Data = lbw) #how SAS runs it
+model <- lm(bwt~lwt + ht_des + race_des, data=lbw)
+summary(model)
+fit <- lm(bwt~lwt + ht_des + race_des, data=lbw)
+tidy(fit, conf.int=TRUE) ## show results as tidy table
+```
+
+
+## Question 2
+Use PROC GLM and the class statement (see assignment #2) to run a regression with LWT, HT and Race simultaneously as predictors.  Interpret the results and compare to the regression model above
+
+```{r set other to reference race for GLM in SAS}
+#changing the reference race to Other Race (bigger sample compare to black)
+#White = 1, Black = 2, Other = 0
+lbw <- lbw |> mutate(race_des2 = case_when(race == 1~1, race == 2~2, race ==3~0))
+lbw$race_des2 <- as.factor(lbw$race_des2)
+GLM(bwt~lwt + ht_des + race_des2, Data = lbw, BETA = TRUE, EMEAN = TRUE) # run like SAS
+modelgl <- lm(bwt~lwt + ht_des + race_des2, data=lbw)
+tidy(modelgl, conf.int=TRUE)
+summary(modelgl)
+anomodel <- aov(bwt ~ lwt + ht_des + race_des2, data = lbw)
+summary(anomodel)
+```
+
