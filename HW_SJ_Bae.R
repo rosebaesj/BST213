@@ -313,7 +313,20 @@ GLM(bwt ~ race, Data = lbw, BETA=TRUE, EMEAN = TRUE)
 
 
 
+## Homework 3 ########
 
+library(sasLM) ## this package runs exactly the same with SAS
+
+### multiple regression ####
+summary (lbw$race)
+lbw$race <- factor(lbw$race)
+lbw$ht <- factor(lbw$ht)
+
+REG(bwt ~ lwt + ht + race, Data = lbw) ## this code runs same with SAS
+summary(lm (bwt ~ lwt + ht + race, data = lbw)) ## what we usually use in R
+
+GLM(bwt ~ lwt + ht + race, Data = lbw, BETA=TRUE, EMEAN = TRUE) # BETA=T for getting parameter
+####***I don't understand GLM quite much, need help here***###
 
 
 
