@@ -1,0 +1,28 @@
+---
+title: "BST213_HW3_SK"
+author: "Soomin Kim"
+date: "2022-09-26"
+output: html_document
+---
+
+```{r}
+library(haven)
+library(ggplot2)
+library(tidyverse)
+library(readxl)
+lbw <- read_excel("~/Google Drive/MPH Harvard Chan/Fall/BST 213/lbw.xls")
+View(lbw)
+```
+
+### 1.	Use PROC REG and dummy-coding (see assignment #2) to run a regression with LWT, HT and Race simultaneously as predictors.  Interpret the results and compare to your earlier 1-predictor models.
+
+```{r}
+lm1 <- lm(bwt~ lwt + factor(ht) + factor(race), data=lbw)
+summary(lm1)
+confint(lm1)
+```
+
+# Holding hypertension and race constant, one unit increase in lwt of the mother predicts 5.744g higher bwt of the baby
+# Holding lwt and race constant, hypertensive mothers are predicted to have a baby with 558.536g less body weight compared to non-hypertensive mothers
+# Holding lwt and hypertension constant, black mothers are predicted to have a baby with 433.656g less body weight compared to white mothers
+# Holding lwt and hypertension constant, mothers of other races are predicted to have a baby with 226.536g less body weight compared to white mothers
