@@ -1,0 +1,156 @@
+---
+title: "rlk_bst213_hw3_9-21"
+author: "Rebecca Kelly"
+date: "2022-09-21"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(fig.width = 4, fig.asp = 0.618, echo = FALSE)
+library(tidyverse)
+library(ggplot2)
+library(knitr)
+library(tableone)
+library(confintr)
+library(haven)
+```
+
+```{r data import, include=FALSE}
+
+#Import dataset
+df<-(read_csv("lbw.csv"))
+summary(df)
+View(df)
+#Create categorical variables for race, smoking, hypertension, uterine 
+# irritability 
+df2 <- mutate(df, race_des = case_when(race == 1~"white", race == 2~"black", 
+                                       race == 3~"other"), 
+              smoke_des = case_when(smoke == 0~"No", smoke == 1~"Yes"), 
+              ht_des = case_when(ht == 0~"No", ht == 1~"Yes"), 
+              ui_des = case_when(ui == 0~"No",ui == 1~"Yes"))
+              options(repr.plot.width =2, repr.plot.height =2)
+              
+#Change the variable for race so that white infants will be the reference group
+# to match the SAS approach for analysis. 
+df3 <- mutate(df, race_des = case_when(race == 1~"a_white", race == 2~"black", 
+                                       race == 3~"other"), 
+              smoke_des = case_when(smoke == 0~"No", smoke == 1~"Yes"), 
+              ht_des = case_when(ht == 0~"No", ht == 1~"Yes"), 
+              ui_des = case_when(ui == 0~"No",ui == 1~"Yes"))
+              options(repr.plot.width =2, repr.plot.height =2)          
+```
+
+Biostatistics 213:  Homework #3
+Due:  September 26
+
+
+Goals: To be able to interpret multiple regression and anova models with 
+continuous, binary and categorical predictors.
+
+### Assignment:  
+### 1.	Use PROC REG and dummy-coding (see assignment #2) to run a regression with LWT, HT and Race simultaneously as predictors.  Interpret the results and compare to your earlier 1-predictor models.
+
+```{r multiple linear regression lm w_ref, include=TRUE}
+
+mod.lm_lwt_ht_race_des <- lm(bwt ~ lwt + ht +race_des, df3)
+summary(mod.lm_lwt_ht_race_des)
+confint(mod.lm_lwt_ht_race_des)
+
+```
+y = 2374.53 + x1(5.74) + x2(-558.54) + x3(-433.66) + x4(-226.54)
+p-value: 0.000103
+Multiple R2 = 0.1191
+
+These three predictors explain 0.0999 of the variability in infant birth weight observed in out data set. 
+
+a  = 2374.53 (1897.29 , 2851.76) intercept 
+x1 =    5.74 (   2.25 ,    9.24) p-value: 0.00139
+x2 = -558.54 (-978.44 , -138.63) p-value: 0.00941
+x3 = -433.66 (-739.85 , -127.46) p-value: 0.00575
+x4 = -226.54 (-447.97 ,   -5.10) p-value: 0.04500
+
+
+Interpretation of coefficients: 
+
+(a)= The predicted birthweight of an infant whose mother weighs 0 lbs, is 
+not hypertensive, and is white is 2374.53 grams.
+(x1)= Holding all other covariates constant, mother's weight changes the average infant birth weight by 5.74 grams per pound increase. 
+(x2)= Holding all other covariates constant, an infant with a hypertensive mother will weigh 558.54 grams less than infants with a non-hypertensive mother.
+(x3)= Holding all other covariates constant, an infant with a black mother will weigh 433.66 grams less than an infant with a white mother. 
+(x4)= Holding all other covariates constant, an infant with an other race mother will weigh 226.54 grams less than an infant with a white mother. 
+
+
+Comparison with single-predictor models: 
+
+results from hw2
+
+Mother's Weight (lwt)
+y = 2367.77 + 4.45x
+p-value = 0.01021
+R2 = 0.02959
+intercept     2367.77 (1917.17, 2818.37)
+change per lb    4.45 (   1.07,    7.82)
+
+Hypertension (ht)
+y = 2972.42 + -436.67x
+p-value = 0.0448
+R2 value = 0.01611
+no      2972.42 (2865.1936, 3079.65387)
+yes     -436.67 (-861.2301   -10.11731)
+
+Race
+y = 3103.95 + x1(-384.26) + x2(-299.93) 
+p-value = 0.01588, 0.00904
+R2 = 0.05081
+white (ref) 3103.95   (2960.1640, 3247.73184)
+black       -384.26   (-695.7165,  -72.79468)
+other       -299.93   (-524.2007,  -75.66529)
+
+The p-value is smaller for the multiple regression than the single-prediction models.
+The multiple R2 is larger than the sum of the individual R2 values from the
+single-predictor models.
+
+
+### 2. Use PROC GLM and the class statement (see assignment #2) to run a regression with LWT, HT and Race simultaneously as predictors. Interpret the results and compare to the regression model above.
+
+
+These results below are using the glm model in R, incase that is what we were supposed to compute: 
+```{r multiple linear regression w_ref glm, include=TRUE}
+## I do not actually understand the difference between proc reg and proc glm that is being discussed in the context of SAS. Trying to do the same thing in R, I will just keep the race variable as continuous? 
+
+mod.glm_lwt_ht_race_des <- glm(bwt ~ lwt + ht +race_des, family = gaussian, df3)
+summary(mod.glm_lwt_ht_race_des)
+confint(mod.glm_lwt_ht_race_des)
+
+```
+
+y = 2374.53 + x1(5.74) + x2(-558.54) + x3(-433.66) + x4(-226.54)
+
+AIC = 3015.1
+
+a  = 2374.53 (1900.43 , 2848.62)
+x1 =    5.74 (   2.28 ,    9.21)
+x2 = -558.54 (-975.68 , -141.39)
+x3 = -433.66 (-737.83 , -129.48)
+x4 = -226.54 (-446.51 ,   -6.56)
+
+
+Interpretation: 
+
+(a) =The predicted birthweight of an infant whose mother weighs 0 lbs, is 
+not hypertensive, and is white is 2374.53 grams. (x1)= Holding all other covariates constant, mother's weight changes the average infant birth weight by 5.74 grams per pound increase. (x2)= Holding all other covariates constant, infants with hypertensive mothers will weigh 558.54 grams less on average than infants with non-hypertensive mothers.(x3, x4)= Holding all other covariates constant, infants born to black mothers will weigh 433.66 grams less on average than infants born to white mothers; infants born to other race mothers will weigh 226.54 grams less on average than infants born to white mothers. 
+
+The values of the beta coefficients are the same using the glm approach. The confidence intervals are more narrow for the glm approach. 
+
+ANOVA Analysis of Variance of bwt with the three categories (lwt, ht, race)
+
+```{r Analysis of Variance bwt three var, fig.align = "center", include=TRUE}
+anova_lwt_ht_race_des <- aov(bwt ~ lwt + ht + race_des, df3)
+summary(anova_lwt_ht_race_des)
+confint(anova_lwt_ht_race_des)
+
+```
+
+The ANOVA acts as a global test to help us determine if the categorical variable of race is significant without identifying exactly which category is different from the others. This difference will be true regardless of the reference category selected. 
+
