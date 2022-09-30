@@ -1,0 +1,186 @@
+---
+title: "BST 213 HW 4"
+author: "Julie Lee"
+date: "2022-09-30"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, libraries}
+# Importing libraries 
+library(ggplot2)
+library(readr)
+library(tidyverse) 
+library(readxl) #To read excel files
+library(sasLM) # for running like SAS
+library(mvtnorm)
+library(rstatix) # for tidy table result
+```
+
+
+```{r, tidy tables}
+rm(list = ls())
+lbw <- read_excel("lbw.xls")
+view(lbw)
+summary(lbw)
+#tidy data
+#race 1 = White, race 2 = Black, race 3 = Other
+#history of hypertension 0 = no, 1 = yes
+#history of smoking 0 = no, 1 = yes
+#premature labor 0 = none, 1 = one, 2 = two or more
+#presence of uterine irritability 0 = no, 1 yes
+#number of physician visits during the first trimester, 0 = none, 1 = one, 2 = two or more
+lbw <- lbw |> mutate(ht_des = case_when(ht == 0~0,
+                                        ht == 1~1),
+                     race_des = case_when(race == 1~0, race == 2~1, race ==3~2))
+lbw$ht_des <- as.factor(lbw$ht_des)
+lbw$race_des <- as.factor(lbw$race_des)
+lbw$smoke <- as.factor(lbw$smoke)
+lbw$ptl <- as.factor(lbw$ptl)
+lbw$ui <- as.factor(lbw$ui)
+lbw$ftv <- as.factor(lbw$ftv)
+#make White as reference (race_des) -> biggest sample size
+# white race = 0, black race = 1, other race = 2
+```
+
+
+## Question A
+
+Use Proc GLM to get the “Least Squares Means” for HT and Race in a model that includes LWT, HT, and Race.  Interpret the results.
+
+```{r, set other race to reference race for GLM, use race_des2}
+#changing the reference race to Other Race (bigger sample compare to black)
+#White = 1, Black = 2, Other = 0
+lbw <- lbw |> mutate(race_des2 = case_when(race == 1~1, race == 2~2, race ==3~0))
+lbw$race_des2 <- as.factor(lbw$race_des2)
+GLM(bwt~lwt + ht_des + race_des2, Data = lbw, BETA = TRUE, EMEAN = TRUE) # run like SAS
+modelgl <- lm(bwt~lwt + ht_des + race_des2, data=lbw)
+tidy(modelgl, conf.int=TRUE)
+summary(modelgl)
+anomodel <- aov(bwt ~ lwt + ht_des + race_des2, data = lbw)
+summary(anomodel)
+```
+
+## Question B
+
+Use Proc Reg to run the model with LWT, HT, and Race (dummy-coded) to get standardized beta’s and partial correlations for all of the predictors.  Interpret the results.
+```{r, white as reference race}
+# white race = 0, black race = 1, other race = 2
+REG(bwt~lwt+ht_des+race_des, Data = lbw) #how SAS runs it
+model <- lm(bwt~lwt + ht_des + race_des, data=lbw)
+summary(model)
+fit <- lm(bwt~lwt + ht_des + race_des, data=lbw)
+tidy(fit, conf.int=TRUE) ## show results as tidy table
+```
+
+## Question C
+
+Use Proc Reg and start with a model that includes only Smoke.  Then, add to this model each of the other variables (i.e., Smoke and Lwt;  Smoke and Age; etc.) and determine their role (Confounder? Collinear variable?  Predictor?).
+
+```{r, use white race as reference}
+REG(bwt~smoke + lwt, Data = lbw) #how SAS runs it
+#for smoke
+fit0 <- lm(bwt~smoke, data=lbw)
+tidy(fit0, conf.int=TRUE)
+#for smoke and lwt
+fit1 <- lm(bwt~smoke + lwt, data=lbw)
+tidy(fit1, conf.int=TRUE) 
+#change in Beta after adding maternal weight
+(-281.44) - (-268.70)
+((-281.44) - (-268.70)) / (-281.44)
+#for bwt and lwt
+fit1b <- lm(bwt~lwt, data=lbw)
+tidy(fit1b, conf.int=TRUE)
+# for smoke and age
+fit2 <- lm(bwt~smoke + age, data=lbw)
+tidy(fit2, conf.int=TRUE)
+#change in beta after adding age
+(-281.44) - (-276.03)
+((-281.44) - (-276.03)) / (-281.44)
+#for bwt and age
+fit2b <- lm(bwt~age, data=lbw)
+tidy(fit2b, conf.int=TRUE)
+# for smoke and age
+fit2c <- lm(as.numeric(smoke)~age, data=lbw)
+tidy(fit2c, conf.int=TRUE)
+# for smoke and race
+fit3 <- lm(bwt~smoke + race_des, data=lbw)
+tidy(fit3, conf.int=TRUE)
+#change in beta after adding race
+(-281.44) - (-426.99)
+((-281.44) - (-426.99)) / (-281.44)
+# for bwt and race
+fit3b <- lm(bwt~race_des, data=lbw)
+tidy(fit3b, conf.int=TRUE)
+# for smoke and premature labor
+fit4 <- lm(bwt~smoke + ptl, data=lbw)
+tidy(fit4, conf.int=TRUE)
+#change in beta after adding premature labor
+(-281.44) - (-240.42)
+((-281.44) - (-240.42)) / (-281.44)
+# for bwt and premature labor
+fit4b <- lm(bwt~ptl, data=lbw)
+tidy(fit4b, conf.int=TRUE)
+#check global test for premature labor and bwt
+summary(aov(bwt ~ ptl, data = lbw))
+# for smoke and hypertension
+fit5 <- lm(bwt~smoke + ht_des, data=lbw)
+tidy(fit5, conf.int=TRUE)
+#change in beta after adding hypertension
+(-281.44) - (-278.57)
+((-281.44) - (-278.57)) / (-281.44)
+# for bwt and hypertension
+fit5b <- lm(bwt~ht_des, data=lbw)
+tidy(fit5b, conf.int=TRUE)
+# for smoke and uterine irritability
+fit6 <- lm(bwt~smoke + ui, data=lbw)
+tidy(fit6, conf.int=TRUE)
+#change in beta after adding uterine irritability
+(-281.44) - (-256.18)
+((-281.44) - (-256.18)) / (-281.44)
+# for smoke and uterine irritability
+fit6b <- lm(bwt~ui, data=lbw)
+tidy(fit6b, conf.int=TRUE)
+# for smoke and number of physician visits
+fit7 <- lm(bwt~smoke + ftv, data=lbw)
+tidy(fit7, conf.int=TRUE)
+#change in beta after adding number of physician visits
+(-281.44) - (-247.50)
+((-281.44) - (-247.50)) / (-281.44)
+# for bwt and number of physician visits
+fit7b <- lm(bwt~ftv, data=lbw)
+tidy(fit7b, conf.int=TRUE)
+#check global test for number of physician visits and bwt
+summary(aov(bwt ~ ftv, data = lbw))
+#check global test for number of physician visits and smoke
+summary(aov(as.numeric(smoke) ~ ftv, data = lbw))
+```
+
+
+##Question D
+Answer the following hypothetical question:  Your current model includes Smoking and Hypertension, both of which are significant.  When you add Age to this model, you find that Age confounds the effect of Smoking (which remains significant), but Age is collinear with Hypertension (which loses significance, although its coefficient is unaffected).  Would you keep Age in the model?
+
+No, because it decreases the power
+
+```{r}
+# smoking and hypertension
+fit8 <- lm(bwt~smoke + ht_des, data=lbw)
+tidy(fit8, conf.int=TRUE)
+# age confound smoking
+fit9 <- lm(bwt~smoke + ht_des + age, data=lbw)
+tidy(fit9, conf.int=TRUE)
+# age to the outcome
+fit10 <- lm(bwt~age, data=lbw)
+tidy(fit10, conf.int=TRUE)
+# age to the smoking
+fit11 <- lm(as.numeric(smoke)~age, data=lbw)
+tidy(fit11, conf.int=TRUE)
+#age to hypertension
+fit12 <- lm(ht~age, data=lbw)
+tidy(fit12, conf.int=TRUE)
+
+```
+
