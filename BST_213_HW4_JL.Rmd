@@ -18,6 +18,7 @@ library(readxl) #To read excel files
 library(sasLM) # for running like SAS
 library(mvtnorm)
 library(rstatix) # for tidy table result
+library(lsmeans) # least square mean package
 ```
 
 
@@ -62,6 +63,10 @@ tidy(modelgl, conf.int=TRUE)
 summary(modelgl)
 anomodel <- aov(bwt ~ lwt + ht_des + race_des2, data = lbw)
 summary(anomodel)
+lsmeans(modelgl, "ht_des")
+lsmeans(modelgl, "race_des2")
+#library(modelbased) -> can also calcuate least square mean
+#estimate_means(modelgl)
 ```
 
 ## Question B
@@ -94,6 +99,9 @@ tidy(fit1, conf.int=TRUE)
 #for bwt and lwt
 fit1b <- lm(bwt~lwt, data=lbw)
 tidy(fit1b, conf.int=TRUE)
+#for smoke and maternal weight
+fit1c <- lm(as.numeric(smoke)~lwt, data=lbw)
+tidy(fit1c, conf.int=TRUE) 
 # for smoke and age
 fit2 <- lm(bwt~smoke + age, data=lbw)
 tidy(fit2, conf.int=TRUE)
