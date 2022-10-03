@@ -4,6 +4,7 @@
 # Sunjeong Bae
 # # # # # # # # # # # 
 
+library(sasLM)
 library("readxl")
 library("ggplot2")
 library("ggstatsplot")
@@ -330,8 +331,46 @@ GLM(bwt ~ lwt + ht + race, Data = lbw, BETA=TRUE, EMEAN = TRUE) # BETA=T for get
 
 
 
+## Homework 4 ####
+
+library(sasLM)
+library(QuantPsyc)
+
+lbw$ht <- factor(lbw$ht)
+lbw$race <- factor(lbw$race)
+
+
+GLM(bwt ~ lwt + ht + race, Data = lbw, EMEAN = T)
+GLM(bwt ~ lwt + ht + white + black, Data = lbw, EMEAN = T)
+
+REG(bwt ~ lwt + ht + race, Data = lbw, summarize = F)
+
+lbw$white <- factor(ifelse(lbw$race ==1, 1, 0))
+lbw$black <- factor(ifelse(lbw$race ==2, 1, 0))
+lbw$othrace <- factor(ifelse(lbw$race ==3, 1, 0))
+
+summary(lm(bwt ~ lwt + ht + race, data = lbw))
+
+lm_result <- lm(scale(bwt) ~ scale(lwt) + scale(as.numeric(ht)) + scale(as.numeric(black)) + scale(as.numeric(othrace)), data = lbw)
+summary(lm_result)
+
+t_lm <- lm_result$coefficients
+sd(lm_result)
+sd(lbw$lwt) /sd(lbw$bwt)
+lm.beta(lm_result,  complete.standardization = FALSE)
+coef
+
+
+LSM(bwt ~ lwt + ht + race, Data = lbw)
 
 
 
-
+REG(bwt ~ smoke, Data = lbw)
+REG(bwt ~ smoke + lwt, Data = lbw)
+REG(bwt ~ smoke + age, Data = lbw)
+REG(bwt ~ smoke + race, Data = lbw)
+REG(bwt ~ smoke + ptl, Data = lbw)
+REG(bwt ~ smoke + ht, Data = lbw)
+REG(bwt ~ smoke + ui, Data = lbw)
+REG(bwt ~ smoke + ftv, Data = lbw)
 
