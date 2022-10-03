@@ -1,0 +1,182 @@
+---
+title: "rlk_bst213_hw4_SASpackageversion"
+author: "Rebecca Kelly"
+date: "2022-09-28"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(fig.width = 4, fig.asp = 0.618, echo = FALSE)
+library(tidyverse)
+library(ggplot2)
+library(knitr)
+library(tableone)
+library(confintr)
+library(haven)
+library(sasLM)
+library(lm.beta)
+```
+
+```{r data import, include=FALSE}
+
+#Import dataset
+df<-(read_csv("lbw.csv"))
+summary(df)
+View(df)
+#Create categorical variables for race, smoking, hypertension, uterine 
+# irritability 
+#Change the variable for race so that white infants will be the reference group
+# to match the SAS approach for analysis. 
+df3 <- mutate(df, race_des = case_when(race == 1~"white", race == 2~"black", 
+                                       race == 3~"other"), 
+              smoke_des = case_when(smoke == 0~"No", smoke == 1~"Yes"), 
+              ht_des = case_when(ht == 0~"z_No", ht == 1~"Yes"), 
+              ui_des = case_when(ui == 0~"No",ui == 1~"Yes"))
+              options(repr.plot.width =2, repr.plot.height =2)          
+```
+
+Biostatistics 213:  Homework #4
+Due:  October 3rd
+
+Goals:  
+(a and b) To be able to run and interpret alternative presentations of results from regression and anova: partial correlations; least squares means; standardized betas.
+	
+(c and d) To recognize the potential symptoms of confounding and collinearity in starting to develop a process for building a multiple regression model.
+
+
+Please be very aware that this is a homework exercise to recognize changes in the beta’s and standard errors.  This is not a suggestion for how to build a model.
+
+
+
+Assignment
+a. Use Proc GLM to get the “Least Squares Means” for HT and Race in a model that includes LWT, HT, and Race.  Interpret the results.
+
+See notes4 page 30,
+	
+```{r, glm multiple linear reg lwt ht race, include=TRUE}
+
+GLM(bwt ~ lwt + ht_des + race_des, df3, BETA = TRUE, EMEAN = TRUE, conf.level = 0.95)
+
+```
+
+
+Predictor      | Estimated Birth Weight       
+---------------|-------------------------------
+ht   - yes     | 2341.58   (1934.26, 2748.91) 
+ht   - no      | 2900.12   (2781.07, 3019.17) 
+race - black   | 2407.26   (2082.23, 2732.29) 
+race - other   | 2614.38   (2368.96, 2859.80) 
+race - white   | 2840.92   (2605.31, 3076.53) 
+
+
+The average birth weight of infants born to mothers that have hypertension is 2341.58 grams. The average birth weight of infants born to mothers without hypertension in 2900.12 grams. The average birth weight of infants born to black mothers is 2407.26 grams. The average birth weight of infants born to mothers of other race is 2614.38 grams. The average birth weight of infants born to white mothers is 2840.92 grams. 
+
+
+
+
+b. Use Proc Reg to run the model with LWT, HT, and Race (dummy-coded) to get standardized beta’s and partial correlations for all of the predictors.  Interpret the results.
+
+See notes4, page 31 for details on beta coefficients. 
+
+
+```{r standardized beta code}
+
+# lm.beta
+mod1 <- lm(bwt ~ lwt + ht +race, df3)
+mod1beta <- lm.beta(mod1)
+print(mod1beta)
+
+```
+
+
+
+```{r,lm multiple linear reg lwt ht race, include=TRUE}
+
+REG(bwt ~ lwt + ht_des + race_des, df3, eps=1e-8, summarize = TRUE)
+Pcor.test(df3, c("lwt", "ht", "race"), c("bwt"))
+```
+
+
+Squared partial correlation of lwt and ht keeping race constant
+
+(0.2712128 - (-0.1333344*-0.0090251))
+--------------------------------------
+((sqrt of 1-(-0.1333344)^2) * (sqrt of 1-(-0.0090251)^2))
+
+```{r, calculations for pcorr2}
+r12 <-  0.2712128
+r13 <- -0.1333344
+r23 <- -0.0090251
+
+#lwt
+(r12 - ((r13*r23)))/(sqrt(1-(r13^2))*(sqrt(1-(r23^2))))
+#ht
+(r13 - ((r12*r23)))/(sqrt(1-(r12^2))*(sqrt(1-(r23^2))))
+#race
+(r23 - ((r13*r12)))/(sqrt(1-(r13^2))*(sqrt(1-(r12^2))))
+
+```
+
+
+Variable   |  Std. Beta  |  P. Corr  
+-----------|-------------|---------------
+lwt        | 0.2055223   | 0.07423        
+ht         |-0.1915219   | 0.01849        
+race       |-0.1585891   | 0.00081        
+
+The standarized beta coefficients for lwt ht and race, allow direct 
+comparison of the betas and their relative influence over the outcome.
+
+The partial correlations reflect the amount of residual variablity 
+explained by the predictor. 
+
+
+c. Use Proc Reg and start with a model that includes only Smoke.  Then, add to this model each of the other variables (i.e., Smoke and Lwt;  Smoke and Age; etc.) and determine their role (Confounder? Collinear variable?  Predictor?).
+
+
+```{r, lm smoke, include=TRUE}
+REG(bwt ~ smoke, df3, summarize = TRUE)
+
+```
+
+```{r, lm smoke lwt, include=TRUE}
+REG(bwt ~ smoke + lwt, df3, summarize = TRUE)
+
+```
+
+```{r, lm smoke age, include=TRUE}
+REG(bwt ~ smoke + age, df3, summarize = TRUE)
+
+```
+```{r, lm smoke lwt age, include=TRUE}
+REG(bwt ~ smoke + lwt + age, df3, summarize = TRUE)
+
+```
+
+
+
+Model (bwt)    |  Coefficient      |   p-value    | change in b/b crude  
+---------------|-------------------|--------------|--------------------------
+smoke          |  smoke  -281.44   |  0.009228**  | -                    
+               |                   |              |
+smoke - lwt    |  smoke  -269.70   |   0.01144*   | 11.74/281.44 = 0.04  
+               |  lwt       4.25   |   0.01266*   | -                    
+               |                   |              |
+smoke - age    |  smoke  -276.03   |   0.01066*   | 5.41/281.44 = 0.02   
+               |  age      11.27   |   0.25547    | -                    
+               |                   |              |
+smoke-lwt-age  |  smoke  -266.89   |   0.01249*   | 14.55/281.44 = 0.05  
+               |  lwt       4.03   |   0.02004*   | 0.22/4.25 = 0.05     
+               |  age       7.12   |   0.47414    | 4.15/7.12 = 0.58     
+
+
+Smoke - predictor
+LWT - predictor, confounder of smoking
+Age - collinear with lwt
+
+
+d. Answer the following hypothetical question: Your current model includes Smoking and Hypertension, both of which are significant. When you add Age to this model, you find that Age confounds the effect of Smoking (which remains significant), but Age is collinear with Hypertension (which loses significance, although its coefficient is unaffected). Would you keep Age in the model?
+
+I will keep Age in the model. Confounders must be included to eliminate alternate explanations, but collinear variables must be excluded to preserve power. I will keep to convention and prioritize removing alternative explanations even if the model loses power.   
+
