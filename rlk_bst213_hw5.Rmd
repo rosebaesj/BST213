@@ -1,0 +1,288 @@
+---
+title: "rlk_bst213_hw5"
+author: "Rebecca Kelly"
+date: "2022-10-06"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(fig.width = 4, fig.asp = 0.618, echo = FALSE)
+library(tidyverse)
+library(ggplot2)
+library(knitr)
+library(tableone)
+library(confintr)
+library(haven)
+library(sasLM)
+library(lm.beta)
+library(GGally)
+```
+
+
+```{r data import, include=FALSE}
+
+#Import dataset
+df<-(read_csv("lbw.csv"))
+#Create categorical variables for race, smoking, hypertension, uterine irritability 
+# mutate variables to create categorical variables with correct reference group for lm command. 
+#collapse ftv and ptl as categorical variables
+df3 <- mutate(df, race_des = case_when (race == 1~"a_white", race == 2~"black", race == 3~"other"), 
+              smoke_des = case_when(smoke == 0~"no", smoke == 1~"yes"), 
+              ht_des = case_when(ht == 0~"no", ht == 1~"yes"), 
+              ui_des = case_when(ui == 0~"no",ui == 1~"yes"),
+              ptl_comb = case_when (ptl == 0 ~"no", ptl > 0 ~"yes"),
+              ftv_comb = case_when (ftv == 0 ~"concern", ftv == 1 ~"a_normal", ftv ==2 ~"a_normal", ftv > 2 ~"concern"))
+
+
+summary(df3)       
+              
+## For use with SAS commands since last alphabetical category is used as reference group
+df4 <- mutate(df, race_des = case_when (race == 1~"white", race == 2~"black", race == 3~"other"), 
+              smoke_des = case_when(smoke == 0~"no", smoke == 1~"yes"), 
+              ht_des = case_when(ht == 0~"z_no", ht == 1~"yes"), 
+              ui_des = case_when(ui == 0~"z_no",ui == 1~"yes"),
+              ptl_comb = case_when (ptl == 0 ~"z_no", ptl > 0 ~"yes"),
+              ftv_comb = case_when (ftv == 0 ~"concern", ftv == 1 ~"normal", ftv == 2 ~"normal", ftv > 2 ~"concern"))
+```
+
+Biostatistics 213: Homework #5
+Due: October 12
+
+
+Goal: To balance the issues of confounding and collinearity in developing a process for building a multiple regression model.
+
+
+Assignment:  	
+a. Start to build a multiple regression model for infant birthweight, identifying all factors that affect the birthweight of the infant. You should consider all of the covariates as possible predictors. Include in the model all the covariates that are scientifically necessary.
+
+
+
+Recall Univariate Results: 
+
+Relationship between mean infant birth weight and mother characteristics
+
+Predictor              | Significant  | Test Used         | p-value
+-----------------------|--------------|-------------------|----------
+Age                    | No           | Spearman's Corr.  | 0.4037
+Weight at last MC      | Yes          | Spearman's Corr.  | 0.0006
+Race                   | Yes          | ANOVA             | 0.0068
+Smoking Status         | Yes          | T-Test            | 0.0075
+Preterm Labor History  | Yes          | T-Test            | 0.0026
+Hypertension History   | Yes          | T-Test            | 0.0448
+Uterine Irritability   | Yes          | T-Test            | 0.0005
+Physician Visits       | Yes          | T-test            | 0.0494
+
+
+```{r lm with all variables, include = TRUE}
+
+#Assumptions of linear regression: LINE, Linear-relationship among the variables, Independent relationships, N, Equal variance of the residuals
+
+model1 <- bwt ~ age + lwt + race_des + ht_des + smoke_des + ptl_comb + ftv_comb
+fit1 <- lm(model1, df3)
+
+summary(fit1)
+confint(fit1)
+
+#Akaike’s information criterion
+AIC(fit1)
+
+#BIC(Bayesian information criterion
+BIC(fit1)
+
+plot(fit1)
+
+#"A large difference between the R-Squared and Adjusted R-squared is not appreciated and generally indicates that multicollinearity exists within the data."
+```
+
+
+```{r lm, model without ftv_comb, include=TRUE}
+model2 <- bwt ~ age + lwt + race_des + ht_des + smoke_des + ptl_comb
+fit2 <- lm(model2, df3)
+
+summary(fit2)
+confint(fit2)
+
+#Akaike’s information criterion
+AIC(fit2)
+
+#BIC(Bayesian information criterion
+BIC(fit2)
+
+
+plot(fit2)
+```
+
+```{r lm model without ftv_comb and age, include=TRUE}
+
+model3 <- bwt ~ lwt + race_des + ht_des + smoke_des + ptl_comb
+fit3 <- lm(model3, df3)
+
+summary(fit3)
+confint(fit3)
+
+#Akaike’s information criterion
+AIC(fit3)
+
+#BIC(Bayesian information criterion
+BIC(fit3)
+
+
+plot(fit3)
+```
+```{r lm model without ftv_comb,age, and ptl_comb, include=TRUE}
+
+model4 <- bwt ~ lwt + race_des + ht_des + smoke_des
+fit4 <- lm(model4, df3)
+
+summary(fit4)
+confint(fit4)
+
+#Akaike’s information criterion
+AIC(fit4)
+
+#BIC(Bayesian information criterion
+BIC(fit4)
+
+plot(fit4)
+```
+Model Summaries from manual assmbly
+-----------------------------------------------------
+model1 - age, lwt, race, smoke, ht, ptl, ftv
+RSE       666.6
+mR2       0.1995
+R2 adj    0.1639
+F-stat    5.606
+p-value   2.375e-06
+AIC       3004.992
+BIC       3037.41
+
+model2 - age, lwt, race, smoke, ht, ptl
+RSE       665.9
+mR2       0.1968
+R2 adj    0.1657
+F-stat    6.335
+p-value   1.152e-06
+AIC       3003.621
+BIC       3032.797
+
+model3 - lwt, race, smoke, ht, ptl
+RSE       664.1
+mR2       0.1968
+R2 adj    0.1703
+F-stat    7.432
+p-value   3.953e-07
+AIC       3001.621 
+BIC       3027.555
+
+model4 - lwt, race, smoke, ht
+RSE       670.3
+mR2       0.1772
+R2 adj    0.1547
+F-stat    7.881
+p-value   9.606e-07
+AIC       3004.181
+BIC       3026.873
+
+
+Of the four models that I manually tested, Model 3 (containing variables lwt, race, smoking status, hypertension, and preterm labor) has the smallest residual standard error and the smallest p-value without losing a favorable R-squared value.
+
+
+
+b. Start to build a multiple regression model for infant birthweight, identifying all factors that affect the birthweight of the infant.  You should consider all of the covariates as possible predictors. Use one (or more) of the automated procedures to build an initial model. Consider what steps you would take next.
+
+```{r automated stepwise multiple regression, include=FALSE}
+
+library(olsrr)
+
+autovar1 <- bwt ~ age + lwt + race_des + ht_des + smoke_des + ptl_comb + ftv_comb
+automodel1 <- lm(autovar1, df3)
+
+test <- ols_step_both_p(automodel1, pent = 0.1, prem = 0.3, details = TRUE)
+plot(test, model = automodel1, print_plot = TRUE)
+
+test$automodel1
+
+```
+Results:
+
+Final model summary from Forward Selection
+------------------------------------------------------------------
+R                       0.444       RMSE                  664.079 
+R-Squared               0.197       Coef. Var              22.551 
+Adj. R-Squared          0.170       MSE                441000.812 
+Pred R-Squared          0.133       MAE                   526.761 
+------------------------------------------------------------------
+ RMSE: Root Mean Square Error 
+ MSE: Mean Square Error 
+ MAE: Mean Absolute Error 
+
+                                 ANOVA                                   
+------------------------------------------------------------------------
+                    Sum of                                              
+                   Squares         DF    Mean Square      F        Sig. 
+------------------------------------------------------------------------
+Regression    19665116.466          6    3277519.411    7.432    0.0000 
+Residual      80262147.819        182     441000.812                    
+Total         99927264.286        188                                   
+------------------------------------------------------------------------
+
+
+Parameter Estimates                                        
+------------------------------------------------------------------------------------------------
+        model        Beta    Std. Error    Std. Beta      t        Sig        lower       upper 
+------------------------------------------------------------------------------------------------
+  (Intercept)    2743.507       248.940                 11.021    0.000    2252.327    3234.688 
+  ptl_combyes    -286.668       135.985       -0.144    -2.108    0.036    -554.978     -18.357 
+race_desblack    -471.200       149.817       -0.223    -3.145    0.002    -766.802    -175.599 
+race_desother    -353.569       115.788       -0.233    -3.054    0.003    -582.028    -125.110 
+ smoke_desyes    -339.031       108.252       -0.228    -3.132    0.002    -552.621    -125.441 
+          lwt       4.639         1.719        0.195     2.698    0.008       1.246       8.032 
+    ht_desyes    -512.705       204.630       -0.172    -2.506    0.013    -916.458    -108.952 
+------------------------------------------------------------------------------------------------
+
+
+```{r Forward and Reverse by AIC, include = FALSE}
+test2 <- ols_step_forward_aic(automodel1, pent = 0.1, prem = 0.3, details = TRUE)
+plot(test2, model = automodel1, print_plot = TRUE)
+summary(test2)
+
+test3 <- ols_step_backward_aic(automodel1, pent = 0.1, prem = 0.3, details = TRUE)
+plot(test3, model = automodel1, print_plot = TRUE)
+summary(test3)
+
+
+```
+
+Final model summary from Reverse Selection by AIC
+------------------------------------------------------------------
+R                       0.444       RMSE                  664.079 
+R-Squared               0.197       Coef. Var              22.551 
+Adj. R-Squared          0.170       MSE                441000.812 
+Pred R-Squared          0.133       MAE                   526.761 
+------------------------------------------------------------------
+ RMSE: Root Mean Square Error 
+ MSE: Mean Square Error 
+ MAE: Mean Absolute Error 
+
+                                 ANOVA                                   
+------------------------------------------------------------------------
+                    Sum of                                              
+                   Squares         DF    Mean Square      F        Sig. 
+------------------------------------------------------------------------
+Regression    19665116.466          6    3277519.411    7.432    0.0000 
+Residual      80262147.819        182     441000.812                    
+Total         99927264.286        188                                   
+------------------------------------------------------------------------
+
+                                      Parameter Estimates                                        
+------------------------------------------------------------------------------------------------
+        model        Beta    Std. Error    Std. Beta      t        Sig        lower       upper 
+------------------------------------------------------------------------------------------------
+  (Intercept)    2743.507       248.940                 11.021    0.000    2252.327    3234.688 
+          lwt       4.639         1.719        0.195     2.698    0.008       1.246       8.032 
+race_desblack    -471.200       149.817       -0.223    -3.145    0.002    -766.802    -175.599 
+race_desother    -353.569       115.788       -0.233    -3.054    0.003    -582.028    -125.110 
+    ht_desyes    -512.705       204.630       -0.172    -2.506    0.013    -916.458    -108.952 
+ smoke_desyes    -339.031       108.252       -0.228    -3.132    0.002    -552.621    -125.441 
+  ptl_combyes    -286.668       135.985       -0.144    -2.108    0.036    -554.978     -18.357 
