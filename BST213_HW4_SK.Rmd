@@ -1,0 +1,108 @@
+---
+title: "BST213_HW4_SK"
+author: "Soomin Kim"
+date: "2022-10-11"
+output: html_document
+---
+
+library(haven)
+
+### a. Use Proc GLM to get the “Least Squares Means” for HT and Race in a model that includes LWT, HT, and Race.  Interpret the results.
+
+```{r}
+library(emmeans)
+model <- lm(bwt ~ lwt + ht + factor(race), data = lbw)
+
+marginal1 <- emmeans(model, ~ ht)
+test(marginal1)
+confint(marginal1)
+```
+
+
+```{r}
+marginal2 <- emmeans(model, ~ factor(race))
+test(marginal2)
+confint(marginal2)
+```
+
+# Estimated birthweight for nonhypertensive mothers are 2900g with 95% CI [2731,3019]. Estimated birthweight for hypertensive mothers are 2342g with 95% CI [1934, 2749]. The groups differ significantly at p= 0.0001.
+
+# Estimated birthweight for white mothers are 2841g with 95% CI [2605, 3077]. Estimated birthweight for black mothers are 2407g with 95% CI [2082, 2732]. Estimated birthweight for mothers of other races are 2614g with 95% CI [2369, 2860]. The groups differ significantly at p = 0.0001.
+
+### b. Use Proc Reg to run the model with LWT, HT, and Race (dummy-coded) to get standardized beta’s and partial correlations for all of the predictors.  Interpret the results
+
+```{r}
+library(lm.beta)
+lm.beta(model)
+```
+# One standard deviation change of lwt is correlated with 0.24 stdev change of bwt.
+# One stdev change of prevalence of ht(in population) is correlated with 0.19 stdev change of bwt.
+# One stdev change of prevalence of black mothers(in population) is correlated with 0.21 stdev change of bwt.
+# One stdev change of prevalence of mothers of other races(in population) is correlated with 0.15 stdev change of bwt.
+# lwt has the biggest effect, and mothers of other races has the smallest effect on bwt.
+
+
+```{r}
+library(olsrr)
+ols_correlations(model)
+
+Squared Partial Corr)
+lwt 0.233^2
+ht 0.190^2
+race2 0.202^2
+race3 0.147^2
+```
+# After adjusting for ht and race, of the remaining variability in the bwt, lwt explains 5.4%
+# After adjusting for lwt and race, of the remaining variability in the bwt, ht explains 3.6%
+# After adjusting for lwt, ht, and mothers of other races, of the remaining variability in the bwt, black mothers explain 4.1%
+# After adjusting for lwt, ht, and black mothers, of the remaining variability in the bwt, mothers of other races explain 2.2%
+
+### c. Use Proc Reg and start with a model that includes only Smoke.  Then, add to this model each of the other variables (i.e., Smoke and Lwt;  Smoke and Age; etc.) and determine their role (Confounder? Collinear variable?  Predictor?).
+
+```{r}
+model1 <- lm(bwt ~ smoke, data = lbw)
+summary(model1)
+```
+
+```{r}
+model2 <- lm(bwt ~ smoke + age, data = lbw)
+summary(model2)
+```
+
+```{r}
+model3 <- lm(bwt ~ smoke + lwt, data = lbw)
+summary(model3)
+```
+
+```{r}
+model4 <- lm(bwt ~ smoke + factor(race), data = lbw)
+summary(model4)
+```
+
+```{r}
+# make new groupings of ptl (0 vs >0)
+lbw$anyptl <- ifelse(lbw$ptl > 0, 1, 0)
+model5 <- lm(bwt ~ smoke + anyptl, data = lbw)
+summary(model5)
+```
+
+```{r}
+model6 <- lm(bwt ~ smoke + ht, data = lbw)
+summary(model6)
+```
+
+```{r}
+model7 <- lm(bwt ~ smoke + ui, data = lbw)
+summary(model7)
+```
+
+```{r}
+# make new ftv groupings of (0 vs 1/2 vs >2)
+lbw$newftv <- ifelse(lbw$ftv > 2, 2, ifelse(lbw$ftv > 0, 1, 0))
+model8 <- lm(bwt ~ smoke + factor(newftv), data = lbw)
+summary(model8)
+```
+
+###d. Answer the following hypothetical question:  Your current model includes Smoking and Hypertension, both of which are significant.  When you add Age to this model, you find that Age confounds the effect of Smoking (which remains significant), but Age is collinear with Hypertension (which loses significance, although its coefficient is unaffected).  Would you keep Age in the model?
+
+# Conventionally, including confounders is more important than excluding collinear variables. So we would probably keep it. We should carry out literature search to check for important confounders.
