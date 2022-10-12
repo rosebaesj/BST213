@@ -374,3 +374,33 @@ REG(bwt ~ smoke + ht, Data = lbw)
 REG(bwt ~ smoke + ui, Data = lbw)
 REG(bwt ~ smoke + ftv, Data = lbw)
 
+
+## Homework 5 ####
+library(tidyverse)
+library(caret)
+library(leaps)
+library(MASS)
+lbw2 <- read_excel("lbw.xls")
+lbw2$ht <- factor(lbw2$ht)
+lbw2$race <- factor(lbw2$race)
+lbw2$ptl <- factor(ifelse(lbw2$ptl ==0, 0, 1))
+lbw2$ui <- factor(lbw2$ui)
+lbw2 <- lbw2[,-c(1:2)]
+
+## Subjective building
+lm_result <- lm(bwt ~  lwt+ race+ smoke+ ptl+ ht+ ui, data = lbw2)
+summary(lm_result)
+
+
+#forward selection
+forward <- lm(bwt~1, data=lbw2)
+step(forward, direction = "forward", scope = formula(lbw2))
+
+
+
+#backward selection
+backward <- lm(bwt~., data=lbw2)
+step(backward, direction = "backward")
+formula(backward)
+
+
