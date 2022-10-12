@@ -5,6 +5,7 @@ date: "2022-10-11"
 output: html_document
 ---
 
+#import lbw data
 library(haven)
 
 ### a. Use Proc GLM to get the “Least Squares Means” for HT and Race in a model that includes LWT, HT, and Race.  Interpret the results.
@@ -45,13 +46,14 @@ lm.beta(model)
 ```{r}
 library(olsrr)
 ols_correlations(model)
+```
 
-Squared Partial Corr)
+Squared Partial Corr:
 lwt 0.233^2
 ht 0.190^2
 race2 0.202^2
 race3 0.147^2
-```
+
 # After adjusting for ht and race, of the remaining variability in the bwt, lwt explains 5.4%
 # After adjusting for lwt and race, of the remaining variability in the bwt, ht explains 3.6%
 # After adjusting for lwt, ht, and mothers of other races, of the remaining variability in the bwt, black mothers explain 4.1%
