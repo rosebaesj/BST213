@@ -1,0 +1,136 @@
+---
+title: "BST213_HW6_SK"
+author: "Soomin Kim"
+date: "2022-11-27"
+output: html_document
+---
+
+library(haven)
+library(tidyverse)
+
+```{r}
+head(icu_2)
+```
+```{r}
+summary(icu_2)
+```
+
+```{r}
+icu <- icu_2 |> mutate(race = factor(race), loc = factor(loc))
+```
+
+```{r}
+model <- glm(status ~ age, data = icu, family = "binomial")
+summary(model)
+exp(cbind(OR = coef(model), confint(model)))
+```
+
+```{r}
+model <- glm(status ~ sex, data = icu, family = "binomial")
+summary(model)
+exp(cbind(OR = coef(model), confint(model)))
+```
+
+```{r}
+model <- glm(status ~ race, data = icu, family = "binomial")
+summary(model)
+exp(cbind(OR = coef(model), confint(model)))
+```
+
+```{r}
+model <- glm(status ~ service, data = icu, family = "binomial")
+summary(model)
+exp(cbind(OR = coef(model), confint(model)))
+```
+
+```{r}
+model <- glm(status ~ cancer, data = icu, family = "binomial")
+summary(model)
+exp(cbind(OR = coef(model), confint(model)))
+```
+
+```{r}
+model <- glm(status ~ renal, data = icu, family = "binomial")
+summary(model)
+exp(cbind(OR = coef(model), confint(model)))
+```
+
+```{r}
+model <- glm(status ~ inf, data = icu, family = "binomial")
+summary(model)
+exp(cbind(OR = coef(model), confint(model)))
+```
+
+```{r}
+model <- glm(status ~ cpr, data = icu, family = "binomial")
+summary(model)
+exp(cbind(OR = coef(model), confint(model)))
+```
+
+```{r}
+model <- glm(status ~ sys, data = icu, family = "binomial")
+summary(model)
+exp(cbind(OR = coef(model), confint(model)))
+```
+
+
+```{r}
+model <- glm(status ~ heart, data = icu, family = "binomial")
+summary(model)
+exp(cbind(OR = coef(model), confint(model)))
+```
+
+```{r}
+model <- glm(status ~ prevad, data = icu, family = "binomial")
+summary(model)
+exp(cbind(OR = coef(model), confint(model)))
+```
+
+```{r}
+model <- glm(status ~ type, data = icu, family = "binomial")
+summary(model)
+exp(cbind(OR = coef(model), confint(model)))
+```
+
+```{r}
+model <- glm(status ~ frac, data = icu, family = "binomial")
+summary(model)
+exp(cbind(OR = coef(model), confint(model)))
+```
+
+```{r}
+model <- glm(status ~ p02, data = icu, family = "binomial")
+summary(model)
+exp(cbind(OR = coef(model), confint(model)))
+```
+
+```{r}
+model <- glm(status ~ ph, data = icu, family = "binomial")
+summary(model)
+exp(cbind(OR = coef(model), confint(model)))
+```
+
+```{r}
+model <- glm(status ~ pc02, data = icu, family = "binomial")
+summary(model)
+exp(cbind(OR = coef(model), confint(model)))
+```
+
+```{r}
+model <- glm(status ~ bic, data = icu, family = "binomial")
+summary(model)
+exp(cbind(OR = coef(model), confint(model)))
+```
+
+```{r}
+model <- glm(status ~ crit, data = icu, family = "binomial")
+summary(model)
+exp(cbind(OR = coef(model), confint(model)))
+```
+
+```{r}
+model <- glm(status ~ loc, data = icu_2, family = "binomial")
+summary(model)
+exp(cbind(OR = coef(model), confint(model)))
+```
+

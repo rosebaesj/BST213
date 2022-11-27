@@ -1,0 +1,41 @@
+---
+title: "BST213_HW5_SK"
+author: "Soomin Kim"
+date: "2022-10-28"
+output: html_document
+---
+
+```{r}
+library(haven)
+library(tidyverse)
+library(MASS)
+```
+
+
+###a.	Start to build a multiple regression model for infant birthweight, identifying all factors that affect the birthweight of the infant.  You should consider all of the covariates as possible predictors.  Include in the model all the covariates that are scientifically necessary.
+
+```{r}
+lbw <- lbw |> mutate(ptl_bi = case_when(ptl == 0 ~ 0, ptl > 0 ~ 1),
+                     ftv_cat = case_when(ftv == 0 ~ 0, ftv == 1 | ftv == 2 ~ 1, ftv > 2 ~ 2),
+                     race = factor(race)) #make binary, categorical, factor variables
+lbw$ftv_cat <- factor(lbw$ftv_cat, levels = c("1", "0", "2")) #reorder the levels
+
+#kitchen sink modeling
+model <- lm(bwt ~ age+ lwt+ race+ smoke+ ptl_bi+ ht+ ui+ ftv_cat, data = lbw)
+summary(model)
+```
+
+###b.	Start to build a multiple regression model for infant birthweight, identifying all factors that affect the birthweight of the infant.  You should consider all of the covariates as possible predictors.  Use one (or more) of the automated procedures to build an initial model.  Consider what steps you would take next.
+
+```{r}
+null.model <- lm(bwt ~ 1, data = lbw)
+full.model <- lm(bwt ~ age+ lwt+ race+ smoke+ ptl_bi+ ht+ ui+ ftv_cat, data = lbw)
+forward.model <- stepAIC(null.model, scope = list(lower=null.model, upper=full.model), direction = "forward", trace = F)
+summary(forward.model)
+```
+
+```{r}
+backward.model <- stepAIC(full.model, scope = list(lower=null.model, upper=full.model), direction = "backward", trace = F)
+summary(backward.model)
+```
+
