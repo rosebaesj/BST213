@@ -13,10 +13,12 @@ head(icu_2)
 ```
 ```{r}
 summary(icu_2)
+table(icu_2$race)
+table(icu_2$loc)
 ```
 
 ```{r}
-icu <- icu_2 |> mutate(race = factor(race), loc = factor(loc))
+icu <- icu_2 |> mutate(newrace = factor(case_when(race == 2 ~ 0, race == 3 ~ 0, TRUE ~ 1)), newloc = factor(case_when(loc == 2 ~ 1, TRUE ~ as.numeric(loc))))
 ```
 
 ```{r}
@@ -32,7 +34,7 @@ exp(cbind(OR = coef(model), confint(model)))
 ```
 
 ```{r}
-model <- glm(status ~ race, data = icu, family = "binomial")
+model <- glm(status ~ newrace, data = icu, family = "binomial")
 summary(model)
 exp(cbind(OR = coef(model), confint(model)))
 ```
@@ -129,7 +131,7 @@ exp(cbind(OR = coef(model), confint(model)))
 ```
 
 ```{r}
-model <- glm(status ~ loc, data = icu_2, family = "binomial")
+model <- glm(status ~ newloc, data = icu, family = "binomial")
 summary(model)
 exp(cbind(OR = coef(model), confint(model)))
 ```
